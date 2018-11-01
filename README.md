@@ -4,34 +4,34 @@ Attempting to replicate results from Knowledge Transfer paper.
 Using the following directory structure:
 .
 
-+-- _{source}
+├── {source}
 
-|   +-- audio
+─── ├── audio
 
-|   |   +-- {sound files}
+─── ─── ├── {sound files}
 
-|   +-- meta
+─── ├── meta
 
-|   |   +-- esc50.csv
+─── ─── ├── esc50.csv
 
 
 . 
 
-+-- _{sorted}
+├── {sorted}
 
-|   +-- esc50-{fold}
+─── ├── esc50-{fold}
 
-|   |   +-- train
+─── ─── ├── train
 
-|   |   |   +-- {classes}
+─── ─── ─── ├── {classes}
 
-|   |   |   |   +-- {sound files}
+─── ─── ─── ─── ├── {sound files}
 
-|   |   +-- val
+─── ─── ├── val
 
-|   |   |   +-- {classes}
+─── ─── ─── ├── {classes}
 
-|   |   |   |   +-- {sound files}
+─── ─── ─── ─── ├── {sound files}
 
 
 Currently, results are only computed for the first transfer method - weights are updated for F1 and F2 is replaced with an appropriately sized layer. 
