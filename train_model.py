@@ -1,4 +1,4 @@
-from feat_extractor import train_model,get_model,get_inpt,get_class_dict,get_pred
+from feat_extractor import train_model,get_model,get_inpt,get_class_dict,get_pred,do_pooling
 import numpy as np
 import torch.nn as nn
 import argparse
@@ -8,6 +8,7 @@ import torch
 from torchvision import datasets
 import os
 import pandas as pd
+import torch.nn.functional as Fx
 import matplotlib.pyplot as plt
 
 
@@ -18,8 +19,9 @@ if __name__ == '__main__':
     parser.add_argument('--testfold',help='which fold of ESC-50 will be for testing (1-5)',choices=['1','2','3','4','5'],required=True)
     args = parser.parse_args()
     
-    loadlayer = 'layer18' # the layer to load up to
+    loadlayer = 'layer19' # the layer to load up to
     trainlayer= 'layer17' # layers below this layer will not be updated (inclusive)
+    globalpoolfn = Fx.max_pool2d # can use max also
     
     esc_csv = pd.read_csv(os.path.join(os.path.abspath(args.source), 'meta', 'esc50.csv')) # File contains labels for each sample in ESC-50
     audio_path = os.path.join(os.path.abspath(args.source), 'audio') # Folder contains ESC-50 samples in original form, easier for testing
@@ -34,23 +36,23 @@ if __name__ == '__main__':
     # Load the Audioset weights and modify to create N1 structure
     feat_extractor=get_model(loadlayer,trainlayer)
     # Add F_T layer
-    layer19 = nn.Sequential(nn.Conv2d(1024,50,kernel_size=1),nn.ReLU())
-    feat_extractor.add_layer(layer19,'layer19',True)
+    layer20 = nn.Sequential(nn.Conv2d(527,50,kernel_size=1),nn.ReLU())
+    feat_extractor.add_layer(layer20,'layer20',True)
     criterion = nn.CrossEntropyLoss()
     # Unsure of what parameters to set here
     optimizer_conv = optim.SGD(feat_extractor.parameters(), lr=0.001, momentum=0.9)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1) # Decay LR by a factor of 0.1 every 7 epochs
     # Train the appropriate layers of the loaded model
-    trained_model = train_model(feat_extractor, criterion, optimizer_conv, exp_lr_scheduler, data_dir, num_epochs=50)
+    trained_model = train_model(feat_extractor, criterion, optimizer_conv, exp_lr_scheduler, data_dir, globalpoolfn, num_epochs=50)
     #save model
-    torch.save(trained_model,'trained_model-'+test_fold+'.mdl')
+    torch.save(trained_model,'results1\\N2-max\\trained_model-'+test_fold+'.mdl')
     # Generate confusion matrix by passing each sample in the test fold through the trained model
     for i in range(len(esc_csv['filename'])):
         if(int(esc_csv['fold'][i])!=int(test_fold)):
             continue
         inpt=get_inpt(audio_path+os.sep+esc_csv['filename'][i])
         inpt = np.reshape(inpt,(1,inpt.shape[0],inpt.shape[1],inpt.shape[2]))
-        pred=get_pred(inpt,trained_model)
+        pred=get_pred(inpt,trained_model,globalpoolfn)
         category=classes[esc_csv['category'][i]]
         confusion[category][pred]+=1
     np.save('confusion-'+test_fold,confusion)
@@ -61,8 +63,8 @@ if __name__ == '__main__':
         correct_count += confusion[i][i]
     accuracy=correct_count/np.sum(confusion)
     print(accuracy)
-    plt.imshow(confusion,cmap='gray')
-    plt.show()
+    # plt.imshow(confusion,cmap='gray')
+    # plt.show()
     # np.set_printoptions(threshold=np.nan)
     # np.core.arrayprint._line_width = 250
     # print(confusion)

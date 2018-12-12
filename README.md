@@ -43,5 +43,17 @@ e.g. python feat_extractor.py --mode train --testfold 2 --source {source} --sort
 This command will do transfer learning from the audioset model to the N1 model in the paper at: http://www.cs.cmu.edu/~alnu/tlwled/tlwled.pdf
 
 Weights are updated for F1 and F2 is replaced with an appropriately sized layer. 
-The model weights and confusion matrices for each fold are in the 'results' folder.
-The combined accuracy is 73%, far below what was achieved in the paper. 
+
+The model weights are in the 'Results' folder as 'trained_model_{}.dat' where the number is the fold used for testing. 
+
+The SVM is trained by saving the F1 and/or F2 layer for each input using 'get_svm_data.py'.
+
+e.g. python get_svm_data.py --model {path to fold-specific pytorch model} --sorted {ESC50 sorted folder} --testfold {fold}
+
+This will output a fold-specific SVM datafile.
+
+To use these together, run test_model.py which will load both the NN and SVM as appropriate. 
+
+e.g. python test_model.py --nn {path to NN model file} --svm {path to SVM model file} --sample {folder with samples sorted by class}
+
+Accuracy is reported in 'Results' folder's README. Best accuracy is 82.25% 
